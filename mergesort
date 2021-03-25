@@ -1,0 +1,205 @@
+.data
+Y1array:		.word	13,101,79,23,154,4,11,38,89,45,17,94,62
+LengthY1:	.word   13
+space:		.asciz	"\n"     
+.text                
+main:					#declaration of a main function
+        addi    sp, sp, -32		#sets the stack pointer to the proper position given needed offset
+        sw      ra, 28(sp)		#stores return address at address of sp with an offset of 28.
+        sw      s0, 24(sp)		#stores s0 at address of sp with an offset of 24.
+        addi    s0, sp, 32		#adds 32 to the sp and sets it to s0 to accommodate for space.
+        lui     a5, %hi(LengthY1)	#loads upper immediate address of the length of the array to argument register a5. 
+        lw      a5, %lo(LengthY1)(a5)	#loads lower address of the length of the array  and the upper address and sets the total to a5.
+        addi    a5, a5 ,-1		#subtracts 1 from the total memory of a5 so that it is properly aligned.
+        mv      a2, a5			#sets a5 to argument register 2, a2.
+        li      a1, 0			#loads 0 into argument register 1, a1.
+        lui     a5, %hi(Y1array)		#loads upper immediate address of the contents of the array into a5.
+        addi    a0, a5, %lo(Y1array)	#adds the lower address of the contents of the array, adds them to a5, and sets it to a0.
+        
+        jal	mergesort		#calls to the mergesort function
+        sw      zero, -20(s0)		#stores the contents of zero into the address of s0 with an offset of -20.
+        j       forcondition  		#jumps to the forcondition function, which sets up the varaibles for the for loop          
+
+for:					#declaration of for loop
+        lui     a5, %hi(Y1array)		#load upper immediate address of the array into a5.
+        lw      a4, -20(s0)		#load memory contents of s0 with offset of -20 to a4.
+        slli    a4, a4, 2		#shift a4 left 2 and set a4 equal to itself.
+        addi    a5, a5, %lo(Y1array)	#add the lower address of the array to a5, and setting it to itself.
+        add     a5, a4, a5		#adds the value of a5 and a4 together and sets it to a5 again. 
+        lw      a5, 0(a5)		#loads the memory content of a5 and sets it to a5.
+        mv      a1, a5			#sets the value of a5 to the value of a1.
+
+#####################			#Where the numbers are printed out
+        li	a7, 4			#loads 4 into a7 which determines that a ascii value is being printed
+        la	a0, space		#loads the address of space and sets it to a0.
+        ecall				#system call that prints out a new line.
+        
+        li	a7, 1			#loads a7 with 1 which determines that a integer is going to be printed.
+        mv	a0, a1			#sets a0 to the value of a1 at the time
+        ecall 				#system call that prints out the sorted number.
+######################
+        lw      a5, -20(s0)		#loads the memory content of s0 at offset -21 and sets it to a5.
+        addi    a5, a5, 1		#increments a5 by 1, which is the counter for the loop
+        sw      a5, -20(s0)		#stores a5 again so the varaible a5 can be used else where.
+    
+forcondition:				#declaration of the forcondition procedure
+        lui     a5, %hi(LengthY1)	#loads upper immediate address of the size of the array into a5.
+        lw      a5, %lo(LengthY1)(a5)	#loads the lower address with the higher address into a5, so they are together in a full range. 
+        lw      a4, -20(s0)		#loads contents that are stored in the memory of s0 at offset -20, and sets them to a4.
+        blt     a4, a5, for		#compares a4 and a5 and branches to for procedure if a4 is less than a5.
+        li      a5, 0			#if a4 is greater than or equal to a5, then continue and set a5 to 0.
+        mv      a0, a5			#set a0 to value of a5.
+        lw      ra, 28(sp)		#load the memory contents of sp at offset 28 to ra.
+        lw      s0, 24(sp)		#load the memory contents of sp at offset 24 to s0.
+        addi    sp, sp, 32		#reset the sp
+        li	a7, 10			#load 10 into return register a7, which ends program
+        ecall          			#system call to a7.
+
+mergesort:				#declaration of mergesort procedure
+        addi    sp, sp, -48		#subtracts 48 from the sp to adjust for the space needed.
+        sw      ra, 44(sp)		#stores the ra into memory location of sp with an offset of 44.
+        sw      s0, 40(sp)		#stores the values of s0 into the memory location of sp with an offset of 40.
+        addi    s0, sp, 48		#adds 48 and sp to one another and sets it to s0, s0=0
+        sw      a0, -36(s0)		#stores the value of a0 into the address of s0 with an offset of -36.
+        sw      a1, -40(s0)		#stores the value of a1 into the address of s0 with an offset of -40.
+        sw      a2, -44(s0)		#stores the value of a2 into the address of s0 with an offset of -44.
+        lw      a4, -40(s0)		#loads the memory contents of s0 with an offset of -40 into a4.
+        lw      a5, -44(s0)		#loads the memory contents of s0 with an offset of -44 into a5.
+        bge     a4, a5, return		#tests to see if the a4, left, is greater than or equal to a5, right, and branches to return if it is.
+        lw      a4, -44(s0)		#Otherwise loads the memory contents of s0 with an offset of -44 and sets it to a4.
+        lw      a5, -40(s0)		#load memory contents of s0 at offset -40 to a5.
+        sub     a5, a4, a5		#subtracts a4 from a5 and sets it to a5. right - left
+        addi    a5, a5, 1		#adds 1 to a5. right-left+1
+        srli    a5, a5, 1		#shifts a5 right by one. ((right-left+1)>>1)
+        lw      a4, -40(s0)		#loads memory contents of s0 at offset -40 and sets it to a4, left.
+        add     a5, a4, a5		#adds a4 and a5 together and sets it to a5. middle = left + ((right-left+1)>>1)
+        sw      a5, -20(s0)		#stores the middle value into memory address of s0 with an offset of -20.
+        lw      a5, -20(s0)		#loads it again into a5.
+        addi    a5, a5, -1		#subtracts 1 from a5 so it is now = middle - 1
+        mv      a2, a5			#sets a2 to value of middle-1
+        lw      a1, -40(s0)		#loads the memory contents of s0 at offset -40, left, and sets it to a1.
+        lw      a0, -36(s0)		#loads the memory contents of s0 at offset -36, x, and sets it to a0.
+        
+        jal    mergesort			#recurrsive call to mergesort
+        
+        lw      a2, -44(s0)		#loads memory contents of s0 with an offset of -44 and sets it to a2, right
+        lw      a1, -20(s0)		#loads memory contents of s0 with an offset of -20 and sets it to a1, middle
+        lw      a0, -36(s0)		#loads memory contents of s0 with an offset of -36 and sets it to a0, x
+        
+        jal    mergesort			#recurrsive call to mergesort given new arguments.
+        
+        lw      a3, -44(s0)		#loads memory contents of s0 with an offset of -44 and sets it to a3, right
+        lw      a2, -20(s0)		#loads memory contents of s0 with an offset of -20 and sets it to a2, middle
+        lw      a1, -40(s0)		#loads memory contents of s0 with an offset of -40 and sets it to a1, left
+        lw      a0, -36(s0)		#loads memory contents of s0 with an offset of -36 and sets it to a0, x
+        
+        jal    merge			#recurrsive call to merge with new arguments.
+        
+        j       resetformergesort	#jump to resetformergesort function where the registers get reset.
+
+return:					#return function declaration that is used in mergesort when left >= right
+        nop				#does nothing
+
+resetformergesort:			#declaration for resetformergesort function			
+        lw      ra, 44(sp)		#loads memory contents of sp at offset 44 and sets it to ra.
+        lw      s0, 40(sp)		#loads memory contents of sp at offset 40 and sets it to s0.
+        addi    sp, sp, 48		#adds 48 to sp and sets sp to it, reseting the stack pointer.
+        jr      ra			#jumps register ra.
+        
+merge:					#declaration of merge function
+        addi    sp, sp, -64		#subtracts 64 from sp to make space.
+        sw      s0, 60(sp)		#stores the value of s0 into memory address of sp with an offset of 60.
+        addi    s0, sp, 64		#adds 64 to sp and sets it to s0 to make required space.
+        sw      a0, -52(s0)		#stores the value of a0 into memory address s0 with an offset of -52.
+        sw      a1, -56(s0)		#stores value of a1 into memory address of s0 with offset of -56.
+        sw      a2, -60(s0)		#stores value of a2 into memory address of s0 with offset of -60.
+        sw      a3, -64(s0)		#stores value of a3 into memory address of s0 with offset of -64.
+        lw      a5, -56(s0)		#loads memory content of so with offset of -56 and sets it to a5.
+        sw      a5, -20(s0)		#stores value of a5 into memory address of s0 with offset -20. leftind = left
+        lw      a5, -60(s0)		#loads memory content of s0 with offset of -60 and set it to a5.
+        sw      a5, -28(s0)		#stores the value of a5 and sets it to memory address of s0 with offset -28. rightind = middle
+        lw      a5, -60(s0)		#loads the memory contents of s0 with an offset of -60 and sets it to a5.
+        addi    a5, a5, -1		#subtracts 1 from a5 and sets it to a5 again. endleft
+        sw      a5, -24(s0)		#stores a5 into memory address of s0 with offset of -24. endleft = middle-1
+        lw      a5, -64(s0)		#loads the memory content of s0 with an offset of -64 and sets it to a5.
+        sw      a5, -36(s0)		#stores the a5 value into the memory address of s0 with an offset of -36. endright = right
+        j       while			#jumps to function while
+
+ifcontents:				#declaration of ifcontents function that is the if statement in the while loop.
+        lw      a5, -20(s0)		#loads the memory contents of s0 with offset of -20 and sets it to a5.
+        slli    a5, a5, 2		#shifts a5 left by 2.
+        lw      a4, -52(s0)		#loads the memory contents of s0 with an offset of -52 and sets it to a4.
+        add     a5, a4, a5		#adds a5 and a4 and sets it to a5.
+        lw      a4, 0(a5)		#loads memory contents of a5 with 0 offset and sets it to a4.
+        lw      a5, -28(s0)		#loads memory contents of s0 with -28 offset and sets it to a5.
+        slli    a5, a5, 2		#shifts a5 left by 2
+        lw      a3, -52(s0)		#loads the memory contents of s0 with an offset of -52 and sets it to a3.
+        add     a5, a3, a5		#adds a5 with a3 and sets it to a5.
+        lw      a5, 0(a5)		#loads memory contents of a5 with offset 0 and sets it to a5.
+        bgt     a4, a5, else		#branch if a4 is greater than a5 and go to else function. x[leftind] <= x[rightind]
+        lw      a5, -20(s0)		#loads memory contents of s0 with offset of -20 and set to a5.
+        addi    a5, a5, 1		#add 1 to a5 and set it to a5. Increments leftind by 1.
+        sw      a5, -20(s0)		#stores contents of a5 into memory address of s0 with offset of -20.
+        j       while			#jump to while loop.
+
+else:					#declaration of else function
+        lw      a5, -28(s0)		#load memory contents of s0 with offset of -28 and set to a5.
+        slli    a5, a5, 2		#shift a5 left by 2.
+        lw      a4, -52(s0)		#load memory contents of s0 with offset of -52 and set to a4.
+        add     a5, a4, a5		#add a5 and a4 together and set it to a5.
+        lw      a5, 0(a5)		#load memory content of a5 at offset 0 and set it to a5.
+        sw      a5, -40(s0)		#stores a5 value into memory address of so with offset of -40.
+        lw      a5, -28(s0)		#loads memory contents of s0 with offset of -28 and set it to a5.
+        addi    a5, a5, -1		#adds -1 to a5 and set it to a5.
+        sw      a5, -32(s0)		#stores the value of a5 into memory address of s0 with an offset of -32.
+        j       elsecontinued		#jump to function forinelse; which is the for loop that is in the else statement.
+
+forinelse:				#declaration of forinelse function.
+        lw      a5, -32(s0)		#loads the memory contents of s0 with offset -32 and sets it to a5.
+        slli    a5, a5, 2		#shifts a5 left by 2.
+        lw      a4, -52(s0)		#loads the memory contents of s0 with offset -52 and sets it to a4.
+        add     a4, a4, a5		#add a4 and a5 together and set it to a4.
+        lw      a5, -32(s0)		#loads memory contents of s0 with offset -32 and sets it to a5.
+        addi    a5, a5, 1		#adds 1 to a5 and sets it to a5.
+        slli    a5, a5, 2		#shifts a5 left by 2.
+        lw      a3, -52(s0)		#loads the memory content of s0 with offset -52 and sets it to a3.
+        add     a5, a3, a5		#add a3 and a5 together and set it to a5.
+        lw      a4, 0(a4)		#loads memory contents of a4 with offset 0 and sets it to a4.
+        sw      a4, 0(a5)		#stores the value of a4 in the memory addres of a5 with an offset of 0.
+        lw      a5, -32(s0)		#loards the memory content of s0 with an offset of -32 and sets it to a5.
+        addi    a5, a5, -1		#subtracts 1 from a5 and sets it to a5.
+        sw      a5, -32(s0)		#stores the value of a5 into the memory address of s0 with an offset of -32.
+
+elsecontinued:				#declaration of elsecontinued function where all the incrementation occurs.
+        lw      a4, -32(s0)		#loads memory contents of s0 with an offset of -32 and sets it to a4.
+        lw      a5, -20(s0)		#loads memory contents of s0 with an offset of -20 and sets it to a5.
+        bge     a4, a5, forinelse	#branch if a4 is greater than or equal to a5 and go to forinelse function. if rightind-1 is greater than or equal to leftind.
+        lw      a5, -20(s0)		#Otherwise load the memory contents of s0 with an offset of -20 and set it to a5.
+        slli    a5, a5, 2		#shift a5 left by 2.
+        lw      a4, -52(s0)		#loads memory contents of s0 with offset -52 and sets it to a4.
+        add     a5, a4, a5		#add a4 and a5 together and set it to a5.
+        lw      a4, -40(s0)		#load memory content of s0 with offset of -40 and set to a4.
+        sw      a4, 0(a5)		#stores value of a4 in memory address of a5 with an offset of 0. x[leftind] = temp
+        lw      a5, -20(s0)		#loads the memory content of s0 with an offset of -20 and set it to a5.
+        addi    a5, a5, 1		#add 1 to a5 and set it to a5.
+        sw      a5, -20(s0)		#stores the value of a5 into the memory address of s0 with an offset of -20. leftind++
+        lw      a5, -24(s0)		#loads the memory address of s0 with an offset of -24 and sets it to a5.
+        addi    a5, a5, 1		#adds 1 to a5 and set it to a5.
+        sw      a5, -24(s0)		#stores the value of a5 to the memory address of s0 with an offset of -24. endleft++
+        lw      a5, -28(s0)		#loads the memory content of s0 with an offset of -28 and sets it to a5.
+        addi    a5, a5, 1		#adds 1 to a5 and sets it to a5.
+        sw      a5, -28(s0)		#stores the value of a5 into the memory address of s0 with an offset of -28. rightind++;
+
+while:					#declaration of while function that is used as a loop
+        lw      a4, -20(s0)		#loads the memory contents of s0 with an offset of -20 and sets it to a4.
+        lw      a5, -24(s0)		#loads the memory contents of s0 with offset -24 and sets it to a5.
+        bgt     a4, a5, resetforwhile	#if leftend is less than or equal to endleft, branch to resetforwhile.
+        lw      a4, -28(s0)		#loads the memory contents of s0 with an offset of -28 and sets it to a4. rightind
+        lw      a5, -36(s0)		#loads the memory contents of s0 with an offset of -36 and sets it to a5. endright
+        ble     a4, a5, ifcontents	#branch if rightind is less than or equal to endright and go to ifcontents. 
+
+resetforwhile:				#declaration for resetforwhile function
+        nop				#does nothing
+        lw      s0, 60(sp)		#loads the memory contents of sp with an offset of 60 to s0.
+        addi    sp, sp, 64		#adds 64 to sp and sets it to sp again.
+        jr      ra			#jumps ra register.
